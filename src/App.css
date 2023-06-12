@@ -16,7 +16,7 @@ header,
   padding: 1.25em;
 }
 .total {
-  font-size: 0.75rem;
+  font-size: 0.55rem;
 }
 .App {
   background: #f2f2f6;
@@ -229,6 +229,7 @@ header {
   align-items: center;
   margin: 1em;
   justify-content: space-between;
+  gap: 0.25em;
 }
 /* Product */
 .product-wrapper {
@@ -282,7 +283,7 @@ header {
 }
 .extra-param-control .select-span {
   background-color: #fff;
-  min-width: 135px;
+  min-width: 125px;
 }
 .checkbox-container button:not(:last-child) {
   margin-bottom: 0.5em;
@@ -305,6 +306,11 @@ header {
 .extra-param-control .checkbox-container {
   width: 120%;
   left: -20%;
+}
+@media only screen and (min-width: 370px) {
+  .total {
+    font-size: 0.75rem;
+  }
 }
 @media only screen and (min-width: 800px) {
   header {
