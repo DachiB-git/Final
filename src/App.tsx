@@ -1,28 +1,19 @@
 import { useEffect, useState } from "react";
-import Product from "./Product";
-import selectArrow from "./arrow.svg";
-import logo from "./logo.svg";
+import Product from "./Components/Product";
+import selectArrow from "./svgs/arrow.svg";
+import logo from "./svgs/logo.svg";
 import "./App.css";
+import Form from "./Components/Form";
 
 function App() {
   const url = "https://api2.myauto.ge/ka/products";
-  const [data, setData] = useState([]);
-  const [curPage, setCurPage] = useState(1);
+  const [data, setData] = useState<any>([]);
+  const [period, setPeriod] = useState();
+  const [sortOrder, setSortOrder] = useState("0");
   const [query, setQuery] = useState("");
-  const [formData, setFormData] = useState({
-    ForRent: "",
-    Mans: [],
-    Cats: [],
-    PriceFrom: "",
-    PriceTo: "",
-  });
   const [manData, setManData] = useState([]);
   const [catData, setCatData] = useState([]);
-  useEffect(() => {
-    fetch(`${url}?${query}&Page=${curPage}`)
-      .then((res) => res.json())
-      .then((res) => setData(res.data.items));
-  }, [curPage, query]);
+  const [filters, setFilters] = useState();
   useEffect(() => {
     fetch("https://static.my.ge/myauto/js/mans.json")
       .then((res) => res.json())
@@ -31,86 +22,79 @@ function App() {
       .then((res) => res.json())
       .then((res) => setCatData(res.data));
   }, []);
-  function nextPage() {
-    setCurPage((prevPage) => prevPage + 1);
-  }
-  function handleSubmit(e: any) {
-    e.preventDefault();
-    const params: any = Object.entries(formData);
-    function handleParam(param: string, i: number) {
-      switch (param) {
-        case "PriceFrom":
-        case "PriceTo":
-        case "ForRent":
-          return params[i][1];
-        case "Mans":
-          return params[i][1].join("-");
-        case "Cats":
-          return params[i][1].join(".");
+  useEffect(() => {
+    fetch(`${url}?${query}&Period=${period}&SortOrder=${sortOrder}`)
+      .then((res) => res.json())
+      .then((res) => setData([res.data.items, res.data.meta]));
+  }, [period, sortOrder, query]);
+  function containerReset() {
+    Array.from(document.querySelectorAll(".checkbox-container")).map(
+      (item: any) => {
+        item.style.display = "";
+        item.parentNode.children[0].children[1].classList.remove(
+          "active-select"
+        );
+        return item;
       }
-    }
-
-    let query_arr = [];
-    for (let i = 0; i < params.length; i++) {
-      query_arr.push(`${params[i][0]}=${handleParam(params[i][0], i)}`);
-    }
-    setQuery(query_arr.join("&"));
+    );
+    Array.from(document.querySelectorAll(".option-container")).map(
+      (item: any) => {
+        item.style.display = "";
+        item.parentNode.children[0].children[1].classList.remove(
+          "active-select"
+        );
+        return item;
+      }
+    );
   }
-  function handleFormChange(e: any) {
-    switch (e.currentTarget.id) {
-      case "deal":
-        setFormData((prevFormData) => ({
-          ...prevFormData,
-          ForRent:
-            prevFormData.ForRent === e.target.value ? "" : e.target.value,
-        }));
-        break;
-      case "manufacturer":
-        setFormData((prevFormData: any) => ({
-          ...prevFormData,
-          Mans: prevFormData.Mans?.includes(e.target.value)
-            ? prevFormData.Mans.filter(
-                (item: string) => item !== e.target.value
-              )
-            : [...(prevFormData.Mans ?? []), e.target.value],
-        }));
-
-        break;
-      case "category":
-        setFormData((prevFormData: any) => ({
-          ...prevFormData,
-          Cats: prevFormData.Cats?.includes(e.target.value)
-            ? prevFormData.Cats.filter(
-                (item: string) => item !== e.target.value
-              )
-            : [...(prevFormData.Cats ?? []), e.target.value],
-        }));
-        break;
-      case "price":
-        setFormData((prevFormData: any) => ({
-          ...prevFormData,
-          [`${e.target.id}`]: e.target.value,
-        }));
-    }
-  }
-  function showCheckboxes(e: any) {
-    if (e.currentTarget.children[1].style.display === "flex") {
-      e.currentTarget.children[1].style = "";
-    } else {
-      Array.from(document.querySelectorAll(".checkbox-container")).map(
-        (container: any) => (container.style = "")
-      );
-      e.currentTarget.children[1].style = "display: flex";
-      e.currentTarget.focus();
-    }
-  }
-  function hideCheckboxes(e: any) {
-    if (e.relatedTarget === null) {
-      e.currentTarget.children[1].style = "";
+  function handleOptions(e: any) {
+    if (e.target.className.includes("select-span")) {
+      const container = e.target.parentNode.children[1];
+      if (container.style.display === "flex") {
+        containerReset();
+        container.style.display = "";
+      } else {
+        containerReset();
+        container.style.display = "flex";
+        container.parentNode.children[0].children[1].classList.add(
+          "active-select"
+        );
+      }
+    } else if (e.target.tagName === "BUTTON") {
+      switch (e.target.parentNode.parentNode.id) {
+        case "period":
+          setPeriod(e.target.value);
+          break;
+        case "sort-order":
+          setSortOrder(e.target.value);
+          break;
+      }
+      containerReset();
+      e.target.parentNode.parentNode.children[0].children[0].textContent =
+        e.target.textContent;
     }
   }
   return (
-    <div className="App">
+    <div
+      className="App"
+      onClick={(e: any) => {
+        const activeContainer: any = Array.from(
+          document.querySelectorAll(".checkbox-container")
+        )?.find((item: any) => item.style.display === "flex");
+        if (
+          activeContainer &&
+          !activeContainer.contains(e.target) &&
+          !e.target.classList.contains("select-span")
+        ) {
+          containerReset();
+        }
+      }}
+    >
+      {data.length === 0 && (
+        <div className="loading-screen">
+          <div className="load-img"></div>
+        </div>
+      )}
       <header>
         <img src={logo} alt="Myauto Logo" />
       </header>
@@ -119,14 +103,11 @@ function App() {
           className="filter-btn-mobile"
           onClick={() => {
             const searchForm = document.getElementById("search-form");
-            if (searchForm!.style.display === "") {
-              searchForm!.style.display = "block";
-            } else {
-              searchForm!.style.display = "";
-            }
+            searchForm!.classList.toggle("active-form");
           }}
         >
           <svg
+            className="type-icon"
             width="14"
             height="14"
             viewBox="0 0 14 14"
@@ -163,155 +144,59 @@ function App() {
           </svg>
           ფილტრი
         </button>
-        <form className="search-form" id="search-form" onSubmit={handleSubmit}>
-          <p>გარიგების ტიპი</p>
-          <div
-            id="deal"
-            onClick={showCheckboxes}
-            onChange={handleFormChange}
-            onBlur={hideCheckboxes}
-            tabIndex={0}
-            className="search-type-container"
-          >
-            <span
-              className={`select-span ${formData.ForRent ? "selected" : ""}`}
-            >
-              {formData.ForRent
-                ? document.querySelector(`label[for=deal-${formData.ForRent}]`)
-                    ?.textContent
-                : "ყველა გარიგება"}
-              <img src={selectArrow} alt="Select Arrow" />
-            </span>
-            <div className="checkbox-container">
-              <label htmlFor="deal-1">
-                <input
-                  type="checkbox"
-                  value="1"
-                  id="deal-1"
-                  onChange={(e): any => {
-                    const checkboxes: any =
-                      e.target.parentNode?.parentNode?.querySelectorAll(
-                        "input[type=checkbox]"
-                      );
-                    Array.from(checkboxes).map((input: any) =>
-                      input === e.target ? input : (input.checked = false)
-                    );
-                  }}
-                />
-                იყიდება
-              </label>
-              <label htmlFor="deal-0">
-                <input
-                  type="checkbox"
-                  value="0"
-                  id="deal-0"
-                  onChange={(e): any => {
-                    const checkboxes: any =
-                      e.target.parentNode?.parentNode?.querySelectorAll(
-                        "input[type=checkbox]"
-                      );
-                    Array.from(checkboxes).map((input: any) =>
-                      input === e.target ? input : (input.checked = false)
-                    );
-                  }}
-                />
-                ქირავდება
-              </label>
-            </div>
-          </div>
-          <p>მწარმოებელი</p>
-          <div
-            id="manufacturer"
-            onClick={showCheckboxes}
-            onBlur={hideCheckboxes}
-            onChange={handleFormChange}
-            tabIndex={0}
-            className="search-type-container"
-          >
-            <span
-              className={`select-span ${
-                formData.Mans.length ? "selected" : ""
-              }`}
-            >
-              {formData?.Mans.length !== 0
-                ? formData?.Mans.map(
-                    (item: any) =>
-                      document.querySelector(`label[for=man-${item}]`)
-                        ?.textContent
-                  ).join(", ")
-                : "ყველა მწარმოებელი"}
-              <img src={selectArrow} alt="Select Arrow" />
-            </span>
-            <div className="checkbox-container" onChange={handleFormChange}>
-              {manData.map((man: any) => (
-                <label key={man.man_id} htmlFor={`man-${man.man_id}`}>
-                  <input
-                    type="checkbox"
-                    value={man.man_id}
-                    id={`man-${man.man_id}`}
-                  />
-                  {man.man_name}
-                </label>
-              ))}
-            </div>
-          </div>
-          <p>კატეგორია</p>
-          <div
-            id="category"
-            onClick={showCheckboxes}
-            onBlur={hideCheckboxes}
-            onChange={handleFormChange}
-            tabIndex={0}
-            className="search-type-container"
-          >
-            <span
-              className={`select-span ${
-                formData.Cats.length ? "selected" : ""
-              }`}
-            >
-              {formData?.Cats.length !== 0
-                ? formData?.Cats.map(
-                    (item: any) =>
-                      document.querySelector(`label[for=cat-${item}]`)
-                        ?.textContent
-                  ).join(", ")
-                : "ყველა კატეგორია"}
-              <img src={selectArrow} alt="Select Arrow" />
-            </span>
-            <div className="checkbox-container">
-              {catData.map((cat: any) => (
-                <label key={cat.category_id} htmlFor={`cat-${cat.category_id}`}>
-                  <input
-                    type="checkbox"
-                    value={cat.category_id}
-                    id={`cat-${cat.category_id}`}
-                  />
-                  {cat.title}
-                </label>
-              ))}
-            </div>
-          </div>
-          <p>ფასი</p>
-          <div id="price" onChange={handleFormChange}>
-            <input
-              type="number"
-              min={0}
-              step={1}
-              placeholder="დან"
-              id="PriceFrom"
-            ></input>
-            <input
-              type="number"
-              min={0}
-              step={1}
-              placeholder="მდე"
-              id="PriceTo"
-            ></input>
-          </div>
-          <input type="submit" value="ძებნა" />
-        </form>
+        <Form
+          setQuery={setQuery}
+          catData={catData}
+          manData={manData}
+          containerReset={containerReset}
+        />
         <div className="product-list-container">
-          {data.map((car: any, i) => (
+          <div className="product-container-top">
+            <p className="total">{data[1]?.total} განცხადება</p>
+            <div className="extra-param-control" onClick={handleOptions}>
+              <div id="period" className="param-type-container">
+                <span className="select-span">
+                  <p>პერიოდი</p>
+                  <img
+                    src={selectArrow}
+                    alt="Select Arrow"
+                    className="select-arrow"
+                  />
+                </span>
+                <div className="checkbox-container">
+                  <button value="">პერიოდი</button>
+                  <button value="1h">ბოლო 1 საათი</button>
+                  <button value="2h">ბოლო 2 საათი</button>
+                  <button value="3h">ბოლო 3 საათი</button>
+                  <button value="1d">ბოლო 1 დღე</button>
+                  <button value="2d">ბოლო 2 დღე</button>
+                  <button value="3d">ბოლო 3 დღე</button>
+                  <button value="1w">ბოლო 1 კვირა</button>
+                  <button value="2w">ბოლო 2 კვირა</button>
+                  <button value="3w">ბოლო 3 კვირა</button>
+                </div>
+              </div>
+              <div id="sort-order" className="param-type-container">
+                <span className="select-span">
+                  <p>თარიღი კლებადი</p>
+                  <img
+                    src={selectArrow}
+                    alt="Select Arrow"
+                    className="select-arrow"
+                  />
+                </span>
+                <div className="checkbox-container">
+                  <button value="1">თარიღი კლებადი</button>
+                  <button value="2">თარიღი ზრდადი</button>
+                  <button value="3">ფასი კლებადი</button>
+                  <button value="4">ფასი ზრდადი</button>
+                  <button value="5">გარბენი კლებადი</button>
+                  <button value="6">გარბენი ზრდადი</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          {data[0]?.map((car: any, i: number) => (
             <Product
               key={i}
               {...car}
@@ -328,20 +213,6 @@ function App() {
             />
           ))}
         </div>
-        <select>
-          <option value="">პერიოდი</option>
-          <option value="1h">ბოლო 1 საათი</option>
-          <option value="2h">ბოლო 2 საათი</option>
-          <option value="3h">ბოლო 3 საათი</option>
-          <option value="1d">ბოლო 1 დღე</option>
-          <option value="2d">ბოლო 2 დღე</option>
-          <option value="3d">ბოლო 3 დღე</option>
-          <option value="1w">ბოლო 1 კვირა</option>
-          <option value="2w">ბოლო 2 კვირა</option>
-          <option value="3w">ბოლო 3 კვირა</option>
-        </select>
-        <h2>{curPage}</h2>
-        <button onClick={nextPage}>Next Page</button>
       </main>
     </div>
   );
