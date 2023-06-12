@@ -16,7 +16,7 @@ header,
   padding: 1.25em;
 }
 .total {
-  font-size: 0.55rem;
+  font-size: 0.6rem;
 }
 .App {
   background: #f2f2f6;
@@ -283,7 +283,7 @@ header {
 }
 .extra-param-control .select-span {
   background-color: #fff;
-  min-width: 125px;
+  /* min-width: 125px; */
 }
 .checkbox-container button:not(:last-child) {
   margin-bottom: 0.5em;
@@ -310,6 +310,9 @@ header {
 @media only screen and (min-width: 370px) {
   .total {
     font-size: 0.75rem;
+  }
+  .extra-param-control .select-span {
+    min-width: 125px;
   }
 }
 @media only screen and (min-width: 800px) {
